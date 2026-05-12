@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="static\styles.css">
+<title>User Manager</title>
+<style>
+  
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>User Manager</h1>
+      <p>Connected to Flask + MongoDB API at http://localhost:5000</p>
+    </header>
+
+    <section class="card">
+      <h2 id="formTitle">Add a new user</h2>
+      <form id="userForm">
+        <input type="text" id="name" placeholder="Name" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <button type="submit" class="btn-primary" id="submitBtn">Add User</button>
+        <button type="button" class="btn-secondary" id="cancelBtn" style="display:none;">Cancel</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="header-row">
+        <h2>Users</h2>
+        <button class="btn-secondary btn-sm" onclick="loadUsers()">Refresh</button>
+      </div>
+      <div id="error" class="error" style="display:none;"></div>
+      <div id="content"></div>
+    </section>
+  </div>
+
+<script>
+  const API_URL = "http://localhost:5000";
+  let editingId = null;
+
+  const form = document.getElementById("userForm");
+  const nameInput = document.getElementById("name");
+  const emailInput = document.getElementById("email");
+  const submitBtn = document.getElementById("submitBtn");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const formTitle = document.getElementById("formTitle");
+  const content = document.getElementById("content");
+  const errorBox = document.getElementById("error");
+
+  function showError(msg) {
+    if (!msg) { errorBox.style.display = "none"; return; }
+    errorBox.textContent = msg;
+    errorBox.style.display = "block";
+  }
+
+  function resetForm() {
+    editingId = null;
+    nameInput.value = "";
+    emailInput.value = "";
+    submitBtn.textContent = "Add User";
+    formTitle.textContent = "Add a new user";
+    cancelBtn.style.display = "none";
+  }
+
+  function startEdit(user) {
+    editingId = user.id;
+    nameInput.value = user.name;
+    emailInput.value = user.email;
+    submitBtn.textContent = "Update User";
+    formTitle.textContent = "Edit user";
+    cancelBtn.style.display = "inline-block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  cancelBtn.addEventListener("click", resetForm);
+
+  async function loadUsers() {
+    showError("");
+    content.innerHTML = '<p class="loading">Loading…</p>';
+    try {
+      const res = await fetch(`${API_URL}/users`);
+      if (!res.ok) throw new Error("Failed to fetch users");
+      const users = await res.json();
+      if (users.length === 0) {
+        content.innerHTML = '<p class="empty">No users yet.</p>';
+        return;
+      }
+      const ul = document.createElement("ul");
+      users.forEach(u => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div class="user-info"><p></p><p></p></div>
+          <div class="user-actions">
+            <button class="btn-edit btn-sm">Edit</button>
+            <button class="btn-danger btn-sm">Delete</button>
+          </div>`;
+        li.querySelector(".user-info p:first-child").textContent = u.name;
+        li.querySelector(".user-info p:last-child").textContent = u.email;
+        li.querySelector(".btn-edit").onclick = () => startEdit(u);
+        li.querySelector(".btn-danger").onclick = () => deleteUser(u.id);
+        ul.appendChild(li);
+      });
+      content.innerHTML = "";
+      content.appendChild(ul);
+    } catch (e) {
+      showError(e.message);
+      content.innerHTML = "";
+    }
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = { name: nameInput.value.trim(), email: emailInput.value.trim() };
+    if (!payload.name || !payload.email) return;
+    try {
+      const url = editingId ? `${API_URL}/users/${editingId}` : `${API_URL}/users`;
+      const method = editingId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(editingId ? "Failed to update user" : "Failed to add user");
+      resetForm();
+      await loadUsers();
+    } catch (err) {
+      showError(err.message);
+    }
+  });
+
+  async function deleteUser(id) {
+    if (!confirm("Delete this user?")) return;
+    try {
+      const res = await fetch(`${API_URL}/users/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete user");
+      if (editingId === id) resetForm();
+      await loadUsers();
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  loadUsers();
+</script>
+</body>
+</html>
