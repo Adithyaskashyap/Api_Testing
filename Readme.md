@@ -102,27 +102,27 @@ bug_reports/Bug_Report.xlsx
 # Screenshots
 
 ## Add User Success
-![Add User](screenshots/add_user_success.png)
+![Add User](S1.png)
 
 ---
 
 ## Update User Success
-![Update User](screenshots/update_user_success.png)
+![Update User](screenshots/S2.png)
 
 ---
 
 ## Delete User Success
-![Delete User](screenshots/delete_user_success.png)
+![Delete User](screenshots/S3.png)
 
 ---
 
 ## Delete User Bug
-![Delete User Bug](screenshots/delete_user_bug.png)
+![Delete User Bug](S4.png)
 
 ---
 
 ## Add User Bug
-![Add User Bug](screenshots/add_user_bug.png)
+![Add User Bug](screenshots/S5.png)
 
 ---
 
